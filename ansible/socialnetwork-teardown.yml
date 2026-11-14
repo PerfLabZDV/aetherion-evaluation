@@ -1,0 +1,42 @@
+---
+# Removes the socialNetwork stack (all data is lost).
+#
+# Usage:
+#   ansible-playbook -i inventory.ini socialnetwork-teardown.yml
+#   ansible-playbook -i inventory.ini socialnetwork-teardown.yml -e swarm_leave=true   # also dissolve the swarm
+
+- name: Remove socialNetwork stack
+  hosts: swarm_managers[0]
+  become: true
+  tasks:
+    - name: Remove the stack
+      ansible.builtin.command:
+        cmd: "docker stack rm {{ dsb_stack_name }}"
+      register: stack_rm
+      changed_when: "'Removing' in (stack_rm.stdout + stack_rm.stderr)"
+
+    - name: Wait until the stack's containers and network are gone
+      ansible.builtin.command:
+        cmd: >-
+          docker network ls --quiet
+          --filter label=com.docker.stack.namespace={{ dsb_stack_name }}
+      register: stack_networks
+      changed_when: false
+      retries: 30
+      delay: 5
+      until: stack_networks.stdout | length == 0
+
+    - name: Remove social graph marker
+      ansible.builtin.file:
+        path: "{{ dsb_state_dir }}/{{ dsb_stack_name }}.social-graph"
+        state: absent
+
+- name: Leave the swarm
+  hosts: swarm_workers:swarm_managers
+  become: true
+  tasks:
+    - name: Leave swarm
+      community.docker.docker_swarm:
+        state: absent
+        force: "{{ inventory_hostname in groups['swarm_managers'] }}"
+      when: swarm_leave | default(false) | bool

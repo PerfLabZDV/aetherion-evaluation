@@ -1,0 +1,14 @@
+---
+# Resets the socialNetwork app to a fresh state, e.g. between performance tests:
+# removes the stack (all data is lost), deploys it again and reloads the social graph.
+# The swarm stays up, and the images are already on the nodes.
+#
+# Usage:
+#   ansible-playbook -i inventory.ini socialnetwork-reset.yml
+#   ansible-playbook -i inventory.ini socialnetwork-reset.yml -e dsb_graph=ego-twitter
+
+- name: Remove the stack
+  ansible.builtin.import_playbook: socialnetwork-teardown.yml
+
+- name: Deploy the stack and load the social graph
+  ansible.builtin.import_playbook: socialnetwork.yml

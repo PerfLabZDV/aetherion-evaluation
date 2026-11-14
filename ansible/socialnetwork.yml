@@ -1,0 +1,159 @@
+---
+# Deploys the DeathStarBench socialNetwork app on a Docker swarm and
+# registers users / constructs the social graph.
+#
+# Run setup.yml on all nodes first (Docker, Python + aiohttp).
+#
+# Usage:
+#   ansible-playbook -i inventory.ini socialnetwork.yml
+#   ansible-playbook -i inventory.ini socialnetwork.yml --tags init -e dsb_graph=ego-twitter -e dsb_init_force=true
+#
+# Tags: swarm (prepare nodes + form swarm), deploy (stack), init (social graph)
+
+- name: Prepare swarm nodes
+  hosts: swarm_managers:swarm_workers
+  become: true
+  tags: [swarm, deploy]
+  tasks:
+    - name: Install git and the Docker SDK for Python
+      ansible.builtin.apt:
+        name:
+          - git
+          - python3-docker
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Check out DeathStarBench at the same path on every node
+      ansible.builtin.git:
+        repo: "{{ dsb_repo }}"
+        dest: "{{ dsb_dir }}"
+        version: "{{ dsb_version }}"
+        depth: 1
+        force: false
+
+- name: Form Docker swarm
+  hosts: swarm_managers:swarm_workers
+  become: true
+  tags: [swarm]
+  tasks:
+    - name: Initialise swarm on the leader
+      community.docker.docker_swarm:
+        state: present
+        advertise_addr: "{{ swarm_advertise_addr }}"
+      register: swarm_info
+      when: inventory_hostname == swarm_leader
+
+    - name: Join remaining managers and workers
+      community.docker.docker_swarm:
+        state: join
+        advertise_addr: "{{ swarm_advertise_addr }}"
+        remote_addrs:
+          - "{{ hostvars[swarm_leader]['swarm_advertise_addr'] }}:2377"
+        join_token: >-
+          {{ hostvars[swarm_leader]['swarm_info']['swarm_facts']['JoinTokens'][
+               'Manager' if inventory_hostname in groups['swarm_managers'] else 'Worker'] }}
+      when: inventory_hostname != swarm_leader
+
+- name: Deploy socialNetwork stack
+  hosts: swarm_managers[0]
+  become: true
+  tags: [deploy]
+  vars:
+    # Matches "<name> N/N" (all replicas running), e.g. "socialnetwork_user-service 1/1"
+    dsb_ready_regex: ' (\d+)/\1( |$)'
+    dsb_ignore_regex: "_({{ dsb_converge_ignore | join('|') }}) "
+  tasks:
+    - name: Deploy the stack
+      ansible.builtin.command:
+        cmd: >-
+          docker stack deploy
+          --compose-file {{ dsb_compose_file }}
+          {{ dsb_stack_name }}
+        chdir: "{{ dsb_app_dir }}"
+      register: stack_deploy
+      changed_when: "'Creating service' in (stack_deploy.stdout + stack_deploy.stderr)"
+      notify: Reset social graph marker
+
+    # Run now, so the marker is reset even if a later task fails.
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers
+
+    - name: Wait until all services are running
+      ansible.builtin.command:
+        cmd: >-
+          docker stack services {{ dsb_stack_name }}
+          --format '{% raw %}{{.Name}} {{.Replicas}}{% endraw %}'
+      register: stack_services
+      changed_when: false
+      retries: "{{ dsb_converge_retries }}"
+      delay: 10
+      until: >-
+        stack_services.rc == 0
+        and stack_services.stdout_lines | length > 0
+        and stack_services.stdout_lines
+            | reject('search', dsb_ignore_regex)
+            | reject('search', dsb_ready_regex)
+            | list | length == 0
+
+    - name: Wait for the nginx frontend
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ dsb_frontend_port }}/"
+        status_code: 200
+      register: frontend
+      retries: 30
+      delay: 5
+      until: frontend.status == 200
+
+  handlers:
+    # A freshly created stack has empty databases, so the graph must be loaded again.
+    - name: Reset social graph marker
+      ansible.builtin.file:
+        path: "{{ dsb_state_dir }}/{{ dsb_stack_name }}.social-graph"
+        state: absent
+
+- name: Register users and construct social graph
+  hosts: swarm_managers[0]
+  become: true
+  tags: [init]
+  vars:
+    dsb_marker: "{{ dsb_state_dir }}/{{ dsb_stack_name }}.social-graph"
+  tasks:
+    - name: Create state directory
+      ansible.builtin.file:
+        path: "{{ dsb_state_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Remove marker to force re-initialisation
+      ansible.builtin.file:
+        path: "{{ dsb_marker }}"
+        state: absent
+      when: dsb_init_force | bool
+
+    - name: Run init_social_graph.py
+      ansible.builtin.command:
+        argv: >-
+          {{ ['python3', 'scripts/init_social_graph.py',
+              '--graph=' ~ dsb_graph,
+              '--ip=127.0.0.1',
+              '--port=' ~ dsb_frontend_port,
+              '--limit=' ~ dsb_init_limit]
+             + (['--compose'] if dsb_init_compose_posts | bool else []) }}
+        chdir: "{{ dsb_app_dir }}"
+        creates: "{{ dsb_marker }}"
+      register: init_graph
+      notify: Record which graph was loaded
+
+    - name: Show init output
+      ansible.builtin.debug:
+        msg: >-
+          {{ init_graph.stdout_lines[-5:] if init_graph is changed
+             else 'Already initialised (' ~ dsb_marker ~ '); use -e dsb_init_force=true to re-run.' }}
+
+  handlers:
+    - name: Record which graph was loaded
+      ansible.builtin.copy:
+        content: "{{ dsb_graph }}\n"
+        dest: "{{ dsb_marker }}"
+        mode: "0644"

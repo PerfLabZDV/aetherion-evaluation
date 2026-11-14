@@ -1,0 +1,31 @@
+---
+# Shared settings for socialnetwork.yml and socialnetwork-teardown.yml.
+# Override per run with -e, or per host/group in the inventory.
+
+# DeathStarBench checkout. Swarm bind-mounts config files by absolute path,
+# so the repo must live at the same path on every node.
+dsb_repo: https://github.com/delimitrou/DeathStarBench.git
+dsb_version: master
+dsb_dir: /opt/DeathStarBench
+dsb_app_dir: "{{ dsb_dir }}/socialNetwork"
+
+# Docker swarm
+swarm_leader: "{{ groups['swarm_managers'][0] }}"
+swarm_advertise_addr: "{{ ansible_facts['default_ipv4']['address'] }}"
+
+# Stack
+dsb_stack_name: socialnetwork
+dsb_compose_file: docker-compose-swarm.yml
+dsb_frontend_port: 8080
+# Services that are expected to stop after doing their job (not counted as "not ready").
+dsb_converge_ignore:
+  - cassandra-schema
+dsb_converge_retries: 90    # x 10 s = 15 min (first deploy pulls all images)
+
+# Social graph initialisation (scripts/init_social_graph.py)
+# socfb-Reed98 (small) | ego-twitter (medium) | soc-twitter-follows-mun (large)
+dsb_graph: socfb-Reed98
+dsb_init_limit: 200         # concurrent requests
+dsb_init_compose_posts: false
+dsb_init_force: false       # re-run even if this stack was already initialised
+dsb_state_dir: /var/lib/deathstarbench
