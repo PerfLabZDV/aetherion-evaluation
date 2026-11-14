@@ -1,0 +1,171 @@
+---
+# Provisions a Debian 13 (trixie) host with:
+#   - Docker Engine + Docker Compose (v2 plugin, plus a `docker-compose` shim)
+#   - Python 3 with asyncio (stdlib) and aiohttp
+#   - libssl-dev, zlib (libz-dev), luarocks, luasocket
+#
+# Usage:
+#   ansible-playbook -i inventory.ini setup.yml
+#   ansible-playbook -i inventory.ini setup.yml -e '{"docker_users": ["alice"]}'
+
+- name: Install evaluation requirements on Debian 13
+  hosts: all
+  become: true
+
+  vars:
+    # Existing users to add to the `docker` group (run docker without sudo).
+    # Defaults to the user who connected and escalated via sudo.
+    docker_users: >-
+      {{ [ansible_facts['env']['SUDO_USER']]
+         if ansible_facts['env']['SUDO_USER'] is defined else [] }}
+
+    # Debian 13's luarocks supports Lua 5.1, 5.2 and 5.3.
+    # 5.1 matches the LuaJIT ABI used by wrk/wrk2 scripts.
+    lua_version: "5.1"
+    lua_dev_package:
+      "5.1": liblua5.1-0-dev
+      "5.2": liblua5.2-dev
+      "5.3": liblua5.3-dev
+
+  pre_tasks:
+    - name: Ensure the target is Debian 13 (trixie)
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['distribution'] == 'Debian'
+          - ansible_facts['distribution_major_version'] == '13'
+        fail_msg: >-
+          This playbook targets Debian 13; found
+          {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}.
+
+  tasks:
+    # ------------------------------------------------------------------ base
+    - name: Install base prerequisites
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - python3-debian   # required by deb822_repository
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    # ---------------------------------------------------------------- docker
+    - name: Remove conflicting distro container packages
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - docker-doc
+          - docker-compose
+          - podman-docker
+          - containerd
+          - runc
+        state: absent
+
+    - name: Add Docker's official apt repository
+      ansible.builtin.deb822_repository:
+        name: docker
+        types: deb
+        uris: https://download.docker.com/linux/debian
+        suites: "{{ ansible_facts['distribution_release'] }}"
+        components: stable
+        signed_by: https://download.docker.com/linux/debian/gpg
+        state: present
+
+    - name: Install Docker Engine and Docker Compose plugin
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Provide a standalone `docker-compose` command (Compose v2)
+      ansible.builtin.file:
+        src: /usr/libexec/docker/cli-plugins/docker-compose
+        dest: /usr/local/bin/docker-compose
+        state: link
+
+    - name: Enable and start Docker
+      ansible.builtin.systemd_service:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Look up local accounts
+      ansible.builtin.getent:
+        database: passwd
+
+    - name: Add existing users to the docker group
+      ansible.builtin.user:
+        name: "{{ item }}"
+        groups: docker
+        append: true
+      loop: "{{ docker_users }}"
+      when:
+        - item != 'root'
+        - item in ansible_facts['getent_passwd']   # never create new accounts
+
+    # ---------------------------------------------------------------- python
+    # Debian 13 ships Python 3.13; asyncio is part of the stdlib.
+    # aiohttp comes from apt because system pip installs are blocked (PEP 668).
+    - name: Install Python 3 and aiohttp
+      ansible.builtin.apt:
+        name:
+          - python3
+          - python3-pip
+          - python3-venv
+          - python3-aiohttp
+        state: present
+
+    # ------------------------------------------------------- build libraries
+    - name: Install libssl-dev, zlib and build tooling
+      ansible.builtin.apt:
+        name:
+          - libssl-dev
+          - zlib1g-dev        # what `apt-get install libz-dev` resolves to
+          - build-essential   # needed by luarocks to compile C rocks
+        state: present
+
+    # --------------------------------------------------------------- luarocks
+    - name: Install Lua, Lua headers and luarocks
+      ansible.builtin.apt:
+        name:
+          - "lua{{ lua_version }}"
+          - "{{ lua_dev_package[lua_version] }}"
+          - luarocks
+        state: present
+
+    - name: Check whether luasocket is already installed
+      ansible.builtin.command:
+        cmd: "luarocks --lua-version={{ lua_version }} show luasocket"
+      register: luasocket_check
+      changed_when: false
+      failed_when: false
+
+    - name: Install luasocket via luarocks
+      ansible.builtin.command:
+        cmd: "luarocks --lua-version={{ lua_version }} install luasocket"
+      when: luasocket_check.rc != 0
+      changed_when: true
+
+    # ----------------------------------------------------------------- verify
+    - name: Verify installed tooling
+      ansible.builtin.command:
+        cmd: "{{ item }}"
+      loop:
+        - docker --version
+        - docker compose version
+        - docker-compose version
+        - python3 -c "import asyncio, aiohttp, sys; print(sys.version.split()[0], 'aiohttp', aiohttp.__version__)"
+        - luarocks --version
+        - lua{{ lua_version }} -e "local s = require('socket'); print(s._VERSION)"
+      register: verify
+      changed_when: false
+
+    - name: Show versions
+      ansible.builtin.debug:
+        msg: "{{ verify.results | map(attribute='stdout') | list }}"
