@@ -1,0 +1,112 @@
+2026-11-16T02:26:16Z  Suite MixedWorkload started (seed 1572337995)
+2026-11-16T02:26:16Z  Run 1 of 10 started (seed 1572337995)
+2026-11-16T02:26:16Z  Test MixedWorkload started
+2026-11-16T02:36:23Z  Test MixedWorkload ended after 10m8s: passed
+2026-11-16T02:36:23Z  Run 1 of 10 ended after 10m8s: passed
+2026-11-16T02:40:23Z  Run 2 of 10 started (seed 1279406451)
+2026-11-16T02:40:23Z  Test MixedWorkload started
+2026-11-16T02:50:31Z  Test MixedWorkload ended after 10m7s: passed
+2026-11-16T02:50:31Z  Run 2 of 10 ended after 10m7s: passed
+2026-11-16T02:54:31Z  Run 3 of 10 started (seed 1877036588)
+2026-11-16T02:54:31Z  Test MixedWorkload started
+2026-11-16T03:04:41Z  Test MixedWorkload ended after 10m10s: passed
+2026-11-16T03:04:41Z  Run 3 of 10 ended after 10m10s: passed
+2026-11-16T03:08:41Z  Run 4 of 10 started (seed 307119448)
+2026-11-16T03:08:41Z  Test MixedWorkload started
+2026-11-16T03:18:48Z  Test MixedWorkload ended after 10m8s: passed
+2026-11-16T03:18:48Z  Run 4 of 10 ended after 10m8s: passed
+2026-11-16T03:22:48Z  Run 5 of 10 started (seed 1304628713)
+2026-11-16T03:22:48Z  Test MixedWorkload started
+2026-11-16T03:32:56Z  Test MixedWorkload ended after 10m8s: passed
+2026-11-16T03:32:56Z  Run 5 of 10 ended after 10m8s: passed
+2026-11-16T03:36:56Z  Run 6 of 10 started (seed 529540579)
+2026-11-16T03:36:56Z  Test MixedWorkload started
+2026-11-16T03:47:04Z  Test MixedWorkload ended after 10m8s: passed
+2026-11-16T03:47:04Z  Run 6 of 10 ended after 10m8s: passed
+2026-11-16T03:51:04Z  Run 7 of 10 started (seed 1889266875)
+2026-11-16T03:51:04Z  Test MixedWorkload started
+2026-11-16T04:01:13Z  Test MixedWorkload ended after 10m8s: passed
+2026-11-16T04:01:13Z  Run 7 of 10 ended after 10m8s: passed
+2026-11-16T04:05:13Z  Run 8 of 10 started (seed 987378669)
+2026-11-16T04:05:13Z  Test MixedWorkload started
+2026-11-16T04:15:20Z  Test MixedWorkload ended after 10m8s: passed
+2026-11-16T04:15:20Z  Run 8 of 10 ended after 10m8s: passed
+2026-11-16T04:19:20Z  Run 9 of 10 started (seed 1753160951)
+2026-11-16T04:19:21Z  Test MixedWorkload started
+2026-11-16T04:29:31Z  Test MixedWorkload ended after 10m10s: passed
+2026-11-16T04:29:31Z  Run 9 of 10 ended after 10m10s: passed
+2026-11-16T04:33:31Z  Run 10 of 10 started (seed 1373598546)
+2026-11-16T04:33:31Z  Test MixedWorkload started
+2026-11-16T04:43:37Z  Test MixedWorkload ended after 10m7s: passed
+2026-11-16T04:43:37Z  Run 10 of 10 ended after 10m7s: passed
+
+Run 1 of 10 (seed 1572337995): passed
+  Test MixedWorkload: PASSED, 593956 requests, 989.82/s, 0.04% errors, p95 17.22ms
+
+Run 2 of 10 (seed 1279406451): passed
+  Test MixedWorkload: PASSED, 588432 requests, 980.61/s, 0.23% errors, p95 16.68ms
+
+Run 3 of 10 (seed 1877036588): passed
+  Test MixedWorkload: PASSED, 594964 requests, 991.49/s, 0.00% errors, p95 16.53ms
+
+Run 4 of 10 (seed 307119448): passed
+  Test MixedWorkload: PASSED, 594344 requests, 990.45/s, 0.00% errors, p95 17.58ms
+
+Run 5 of 10 (seed 1304628713): passed
+  Test MixedWorkload: PASSED, 594024 requests, 989.92/s, 0.00% errors, p95 18.77ms
+
+Run 6 of 10 (seed 529540579): passed
+  Test MixedWorkload: PASSED, 589502 requests, 982.40/s, 0.24% errors, p95 14.43ms
+
+Run 7 of 10 (seed 1889266875): passed
+  Test MixedWorkload: PASSED, 594160 requests, 990.15/s, 0.02% errors, p95 17.80ms
+
+Run 8 of 10 (seed 987378669): passed
+  Test MixedWorkload: PASSED, 588811 requests, 981.23/s, 0.24% errors, p95 16.55ms
+
+Run 9 of 10 (seed 1753160951): passed
+  Test MixedWorkload: PASSED, 588709 requests, 981.07/s, 0.23% errors, p95 17.43ms
+
+Run 10 of 10 (seed 1373598546): passed
+  Test MixedWorkload: PASSED, 589271 requests, 982.00/s, 0.22% errors, p95 16.22ms
+
+Test MixedWorkload: PASSED, passed in 10 of 10 counted runs
+  mean ± 95% confidence interval (coefficient of variation)
+  requests 591617.30 ± 2034.89 (n=10, CV 0.48%)
+  throughput 985.92/s ± 3.39/s (n=10, CV 0.48%)
+  errors 0.12% ± 0.08% (n=10, CV 94.30%)
+  latency p50 9.43ms ± 0.35ms (n=10, CV 5.17%)
+  latency p95 16.92ms ± 0.83ms (n=10, CV 6.83%)
+  latency p99 24.48ms ± 1.66ms (n=10, CV 9.48%)
+  GET socialNetwork/wrk2-api/home-timeline/read p95 17.84ms ± 0.98ms (n=10, CV 7.67%)
+  POST socialNetwork/wrk2-api/post/compose p95 16.54ms ± 0.68ms (n=10, CV 5.77%)
+  GET socialNetwork/wrk2-api/user-timeline/read p95 14.04ms ± 0.64ms (n=10, CV 6.40%)
+  energy 297157.85J ± 5228.45J (n=10, CV 2.46%)
+  power 494.64W ± 8.96W (n=10, CV 2.53%)
+  aetherionServer power mean 60.19W ± 0.42W (n=10, CV 0.98%)
+  sutServer1 cpu mean 15.18% ± 6.83% (n=10, CV 62.93%)
+  sutServer1 disk mean 0.38% ± 0.36% (n=10, CV 131.88%)
+  sutServer1 mem mean 20.03% ± 10.71% (n=10, CV 74.77%)
+  sutServer1 net mean 45953892.47B/s ± 7952148.60B/s (n=10, CV 24.19%)
+  sutServer1 power mean 141.20W ± 10.64W (n=10, CV 10.54%)
+  sutServer2 cpu mean 15.94% ± 5.97% (n=10, CV 52.35%)
+  sutServer2 disk mean 0.33% ± 0.35% (n=10, CV 150.22%)
+  sutServer2 mem mean 18.84% ± 10.21% (n=10, CV 75.73%)
+  sutServer2 net mean 22501521.13B/s ± 8711823.59B/s (n=10, CV 54.12%)
+  sutServer2 power mean 151.78W ± 13.13W (n=10, CV 12.10%)
+  sutServer3 cpu mean 14.46% ± 6.08% (n=10, CV 58.80%)
+  sutServer3 disk mean 0.50% ± 0.34% (n=10, CV 94.61%)
+  sutServer3 mem mean 22.12% ± 10.81% (n=10, CV 68.32%)
+  sutServer3 net mean 19727486.68B/s ± 8751697.34B/s (n=10, CV 62.01%)
+  sutServer3 power mean 142.04W ± 11.01W (n=10, CV 10.83%)
+  loadGenerator cpu mean 19.99% ± 0.55% (n=10, CV 3.84%)
+  loadGenerator mem mean 9.83% ± 0.04% (n=10, CV 0.56%)
+  loadGenerator worker1 cpu mean 18.35% ± 0.40% (n=10, CV 3.03%)
+  loadGenerator worker1 mem mean 9.84% ± 0.10% (n=10, CV 1.44%)
+  loadGenerator worker2 cpu mean 20.89% ± 0.68% (n=10, CV 4.56%)
+  loadGenerator worker2 mem mean 9.79% ± 0.05% (n=10, CV 0.74%)
+  loadGenerator worker3 cpu mean 20.73% ± 0.66% (n=10, CV 4.44%)
+  loadGenerator worker3 mem mean 9.86% ± 0.04% (n=10, CV 0.63%)
+
+Seed 1572337995, 10 of 10 runs, passed
+Started 2026-11-16T02:26:16Z, ended 2026-11-16T04:43:37Z, after 2h17m22s
